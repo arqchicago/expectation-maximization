@@ -2,6 +2,7 @@ seed = 5941
 import numpy as np
 from scipy.stats import norm
 import random
+from sklearn.datasets import make_blobs
 import matplotlib.pyplot as plt
 from matplotlib import style
 style.use('fivethirtyeight')
@@ -9,34 +10,41 @@ style.use('fivethirtyeight')
 np.random.seed(seed)
 
 
-def draw_from_normal(mean, std, n):
-    return np.random.normal(mean, std, size=n)
-
 
 if __name__ == '__main__':
 
-   
-    #create clusters
-    x0 = draw_from_normal(10,1.8,10)
-    x1 = draw_from_normal(28,3.9,10)
-    x2 = draw_from_normal(50,3.3,10)
-    x = np.stack((x0,x1,x2)).flatten()
+    # generating some random sample data
+    # a mixture of ellipsoidal and appx circular shape
     
-    # getting a visual
-    x_list = [x0, x1, x2]
-    y_list = [[0 for i in x_i] for x_i in x_list]
+    n_samples = 250
+    
+    # data 1
+    data1 = np.random.randn(n_samples, 2) + np.array([8, 10])
 
-    print(x_list)
-    print(y_list)
+    # data 2
+    C = np.array([[0., 0.7], [1.5, 0.9]])
+    data2 = np.dot(np.random.randn(n_samples, 2), C) + np.array([4, 5])
+
+    # data 3
+    C = np.array([[1., -0.3], [0.5, 1.4]])
+    data3 = np.dot(np.random.randn(n_samples, 2) + np.array([0, 7]), C)
+
+    # concatenate datasets into the final data set
+    data = [data1, data2, data3]
+    cols = ['r','b','g']
+    X = np.vstack([data1, data2, data3])
 
     plt.style.use('seaborn')
     fig, ax = plt.subplots()
-    
-    for i in range(len(x_list)):
-        ax.scatter(x_list[i], y_list[i])
 
-    ax.set_yticks([0,0.25, 0.5, 0.75, 1])
+    ax.scatter(X[:, 0], X[:, 1], 2.5) 
+    fig.savefig('output/data_plot.png')
+
+    fig2, ax2 = plt.subplots()    
+    for i in range(len(data)):
+        ax2.scatter(data[i][:, 0], data[i][:, 1], 0.80, facecolor=cols[i]) 
+
     ax.grid(True)
-    fig.savefig('output/feature_importance_plot.png')
+    fig2.savefig('output/data_plot_labels.png')
 
     
