@@ -35,7 +35,7 @@ def gen_data(n_samples):
 
     return X, data, cols
 
-def plot_data(X, data, cols, filename='output/data_plot_labels.png'):
+def plot_data(X, data, cols, means=None, filename='output/data_plot_labels.png'):
     plt.style.use('seaborn')
     fig, ax = plt.subplots()
 
@@ -45,6 +45,10 @@ def plot_data(X, data, cols, filename='output/data_plot_labels.png'):
     fig2, ax2 = plt.subplots()    
     for i in range(len(data)):
         ax2.scatter(data[i][:, 0], data[i][:, 1], 0.80, facecolor=cols[i]) 
+        
+    if means is not None:
+        for i in range(means.shape[0]):
+            ax2.scatter(means[i][0], means[i][1], 25, facecolor='b') 
 
     ax.grid(True)
     fig2.savefig(filename)
@@ -119,10 +123,11 @@ if __name__ == '__main__':
     # generate random data clusters
     n_samples = 250
     X, data, cols = gen_data(n_samples)
-    plot_data(X, data, cols, 'output/data_plot_labels.png')
 
     # running the gmm
     gmm1d = GaussianMixtureModelmd(X, 3)
     gmm1d.train(10)
+    means = gmm1d.get_means()
+    plot_data(X, data, cols, means, 'output/data_plot_labels.png')
 
     
