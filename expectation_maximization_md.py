@@ -75,7 +75,6 @@ class GaussianMixtureModelmd():
         self.means = np.array(x[np.random.choice(x.shape[0], num_components, replace=False)])      
         self.covs = np.full((num_components, x.shape[1], x.shape[1]), np.cov(x, rowvar = False))
         self.prior_mixture = np.ones(num_components)/num_components
-        self.probs = np.zeros([len(x), num_components])
         self.responsibilities = np.zeros([len(x), num_components])
         self.log_likelihood = 0
         self.log_likelihood_trace = []
@@ -83,7 +82,6 @@ class GaussianMixtureModelmd():
 
     def train(self, iters):
         for j in range(iters):
-            print(f'iter={j}  mean={self.means}')
             self.e_step()
             self.m_step()
     
@@ -92,22 +90,22 @@ class GaussianMixtureModelmd():
         expectation step: computing responsibilities of each data cluster 
         """
         for i in range(self.num_components):
-            self.probs[:,i] = np.multiply(self.prior_mixture[i], multivariate_normal(self.means[i], self.covs[i]).pdf(self.x))
+            self.responsibilities[:,i] = np.multiply(self.prior_mixture[i], multivariate_normal(self.means[i], self.covs[i]).pdf(self.x))
             
-        self.log_likelihood = np.sum(np.log(np.sum(self.probs, axis = 1)))
-        self.responsibilities = self.probs/self.probs.sum(axis=1)[:,None]
+        self.log_likelihood = np.sum(np.log(np.sum(self.responsibilities, axis = 1)))
+        self.responsibilities = self.responsibilities/self.responsibilities.sum(axis=1)[:,None]
         
     def m_step(self):
         """
         maximization step: updating means and covariances
         """
+
         for i in range(self.num_components):
             self.prior_mixture[i] = np.divide(np.sum(self.responsibilities[:,i], axis=0), len(self.x))
-            self.means[i] = np.sum(self.responsibilities[:,i].reshape(-1, 1)*self.x)/np.sum(self.responsibilities[:,i])
-            diff = (self.x - self.means[i]).T
-            weighted_sum = np.dot(self.responsibilities[:, i] * diff, diff.T)
+            self.means[i] = np.divide(np.dot(self.responsibilities[:,i], self.x), np.sum(self.responsibilities[:,i], axis=0))
+            weighted_sum = np.dot(self.responsibilities[:, i] * (self.x - self.means[i]).T, (self.x - self.means[i]))
             self.covs[i] = np.divide(weighted_sum, np.sum(self.responsibilities[:,i], axis=0))
-            
+
     def get_means(self):
         return self.means
         
@@ -116,18 +114,18 @@ class GaussianMixtureModelmd():
         
     def get_responsibilities(self):
         return self.responsibilities
-
-
+        
+        
 if __name__ == '__main__':
 
     # generate random data clusters
-    n_samples = 250
+    n_samples = 500
     X, data, cols = gen_data(n_samples)
 
     # running the gmm
-    gmm1d = GaussianMixtureModelmd(X, 3)
-    gmm1d.train(10)
-    means = gmm1d.get_means()
+    gmm_md = GaussianMixtureModelmd(X, 3)
+    gmm_md.train(35)
+    means = gmm_md.get_means()
     plot_data(X, data, cols, means, 'output/data_plot_labels.png')
 
     
