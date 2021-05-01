@@ -76,24 +76,37 @@ class GaussianMixtureModelmd():
         self.covs = np.full((num_components, x.shape[1], x.shape[1]), np.cov(x, rowvar = False))
         self.prior_mixture = np.ones(num_components)/num_components
         self.responsibilities = np.zeros([len(x), num_components])
-        self.log_likelihood = 0
-        self.log_likelihood_trace = []
-        self.converged = False
+        self._log_likelihood = 0
+        self._log_lh_diff = 0
 
-    def train(self, iters):
+    def train(self, iters, tol):
+        converged = False
         for j in range(iters):
             self.e_step()
             self.m_step()
+            
+            if(abs(self._log_lh_diff) <=tol):
+                converged = True
+                print(f'gmm converged after {j} iterations!')
+                break
+        
+        if converged==False:
+            print(f'gmm did not converge after {j} iterations.')
+            print(f'consider more iterations or reducing the tolerance')
+        
     
     def e_step(self):
         """
         expectation step: computing responsibilities of each data cluster 
         """
+        log_likelihood_prev = self._log_likelihood
         for i in range(self.num_components):
             self.responsibilities[:,i] = np.multiply(self.prior_mixture[i], multivariate_normal(self.means[i], self.covs[i]).pdf(self.x))
             
-        self.log_likelihood = np.sum(np.log(np.sum(self.responsibilities, axis = 1)))
+        self._log_likelihood = np.sum(np.log(np.sum(self.responsibilities, axis = 1)))
+        self._log_lh_diff = self._log_likelihood - log_likelihood_prev
         self.responsibilities = self.responsibilities/self.responsibilities.sum(axis=1)[:,None]
+        
         
     def m_step(self):
         """
@@ -109,7 +122,7 @@ class GaussianMixtureModelmd():
     def get_means(self):
         return self.means
         
-    def get_stdevs(self):
+    def get_covs(self):
         return self.covs
         
     def get_responsibilities(self):
@@ -124,8 +137,11 @@ if __name__ == '__main__':
 
     # running the gmm
     gmm_md = GaussianMixtureModelmd(X, 3)
-    gmm_md.train(35)
+    gmm_md.train(iters=50, tol=1e-7)
     means = gmm_md.get_means()
+    print(f'means\n {means}')
+    covs = gmm_md.get_covs()
+    print(f'covariances\n {covs}')
     plot_data(X, data, cols, means, 'output/data_plot_labels.png')
 
     
