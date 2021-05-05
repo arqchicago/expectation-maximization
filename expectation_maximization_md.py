@@ -1,4 +1,4 @@
-seed = 5953
+seed = 5954
 import numpy as np
 from scipy.stats import norm, multivariate_normal
 import random
@@ -35,7 +35,9 @@ def gen_data(n_samples):
 
     return X, data, cols
 
-def plot_data(X, data, cols, means=None, filename='output/data_plot_labels.png'):
+def plot_data(X, data, cols, means=None, covs=None, filename='output/data_plot_labels.png'):
+    colors = ['blue', 'orange', 'green', 'red', 'purple', 'brown', 'pink', 'gray', 'gray', 'olive', 'cyan', 'black']
+    cols = random.sample(colors, means.shape[0])
     plt.style.use('seaborn')
     fig, ax = plt.subplots()
 
@@ -44,12 +46,24 @@ def plot_data(X, data, cols, means=None, filename='output/data_plot_labels.png')
 
     fig2, ax2 = plt.subplots()    
     for i in range(len(data)):
-        ax2.scatter(data[i][:, 0], data[i][:, 1], 0.80, facecolor=cols[i]) 
+        ax2.scatter(data[i][:, 0], data[i][:, 1], 1, facecolor=cols[i]) 
         
     if means is not None:
         for i in range(means.shape[0]):
-            ax2.scatter(means[i][0], means[i][1], 25, facecolor='b') 
+            ax2.scatter(means[i][0], means[i][1], 50, facecolor='b', edgecolors='r', linewidths=2) 
 
+    x = np.arange(-1.0, 11.0, 0.01)
+    y = np.arange(1.0, 14.0, 0.01)
+    X, Y = np.meshgrid(x, y)
+    coords = np.array([X.ravel(), Y.ravel()]).T
+    cols = random.sample(colors, means.shape[0])
+
+    for i in range(means.shape[0]):
+        mean, cov = means[i], covs[i]
+        Z = multivariate_normal(mean, cov).pdf(coords)
+        Z = Z.reshape(X.shape)
+        plt.contour(X, Y, Z, colors = cols[i])
+        
     ax.grid(True)
     fig2.savefig(filename)
    
@@ -142,6 +156,6 @@ if __name__ == '__main__':
     print(f'means\n {means}')
     covs = gmm_md.get_covs()
     print(f'covariances\n {covs}')
-    plot_data(X, data, cols, means, 'output/data_plot_labels.png')
+    plot_data(X, data, cols, means, covs, 'output/data_plot_labels.png')
 
     
